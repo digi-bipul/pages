@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>English Mastery Pro | Corrected Edition</title>
+    <style>
+        :root {
+            --bg-gradient: radial-gradient(circle at 50% 10%, #dbeafe 0%, #e0c3fc 100%);
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+            --text-primary: #1c1c1e;
+            --text-secondary: #6e6e73;
+            --accent-color: #007aff;
+            --accent-hover: #005ecb;
+            --danger-color: #ff3b30;
+            --success-color: #34c759;
+            --radius-window: 24px;
+            --radius-btn: 14px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg-gradient);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            color: var(--text-primary);
+        }
+
+        #celebration-canvas {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 1000;
+        }
+
+        .app-window {
+            width: 95%;
+            max-width: 700px;
+            height: 90vh;
+            max-height: 700px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-window);
+            box-shadow: var(--glass-shadow);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 10;
+            overflow: hidden;
+        }
+
+        .window-header {
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            background: rgba(255,255,255,0.4);
+            flex-shrink: 0;
+        }
+
+        .traffic-lights { position: absolute; left: 20px; display: flex; gap: 8px; }
+        .light { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; }
+        .red { background: #ff5f57; border: 1px solid #e0443e; }
+        .yellow { background: #febc2e; border: 1px solid #dba524; }
+        .green { background: #28c840; border: 1px solid #1aab29; }
+        .window-title { font-weight: 600; font-size: 15px; opacity: 0.9; }
+
+        .content-area {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            width: 100%;
+        }
+
+        .screen { display: none; width: 100%; flex-direction: column; align-items: center; animation: fadeIn 0.4s ease; }
+        .screen.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        h1 { font-size: 28px; margin-bottom: 10px; text-align: center; }
+        h2 { font-size: 22px; margin-bottom: 15px; text-align: center; }
+        .subtitle { font-size: 16px; color: var(--text-secondary); margin-bottom: 25px; text-align: center; }
+
+        input.username-input {
+            width: 100%; max-width: 280px; padding: 12px 20px;
+            border-radius: 12px; border: 1px solid rgba(0,0,0,0.1);
+            background: rgba(255,255,255,0.6); font-size: 16px; margin-bottom: 20px; outline: none; text-align: center;
+        }
+        input.username-input:focus { background: white; border-color: var(--accent-color); }
+
+        .avatar-grid { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; justify-content: center; }
+        .avatar-option {
+            width: 55px; height: 55px; font-size: 28px; background: rgba(255,255,255,0.5);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s; border: 2px solid transparent;
+        }
+        .avatar-option.selected { border-color: var(--accent-color); background: white; transform: scale(1.1); box-shadow: 0 4px 12px rgba(0,122,255,0.2); }
+
+        .level-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; max-width: 500px; }
+        .level-card {
+            background: rgba(255,255,255,0.5); padding: 20px 10px; border-radius: 16px; cursor: pointer;
+            border: 1px solid rgba(0,0,0,0.05); text-align: center; transition: all 0.2s;
+        }
+        .level-card:hover { transform: translateY(-3px); background: white; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+        .level-card h3 { font-size: 16px; margin-bottom: 5px; }
+        .level-card p { font-size: 12px; color: var(--text-secondary); }
+
+        .hud-top { 
+            width: 100%; display: flex; justify-content: space-between; margin-bottom: 15px; 
+            padding: 0 10px; box-sizing: border-box;
+        }
+        .user-pill { 
+            background: rgba(255,255,255,0.6); padding: 5px 12px; border-radius: 20px; 
+            font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 5px;
+        }
+
+        .question-text { 
+            font-size: 20px; font-weight: 500; line-height: 1.5; margin: 10px 0 30px; 
+            color: var(--text-primary); text-align: center; max-width: 90%;
+        }
+        .blank { 
+            display: inline-block; border-bottom: 2px solid var(--accent-color); 
+            color: var(--accent-color); padding: 0 5px; font-weight: 600; min-width: 40px; text-align: center;
+        }
+
+        .options-grid { 
+            display: grid; grid-template-columns: 1fr; gap: 10px; width: 100%; 
+            max-width: 450px; margin-bottom: 20px; 
+        }
+        .option-btn {
+            background: white; border: 1px solid rgba(0,0,0,0.1); padding: 14px; border-radius: 12px;
+            font-size: 15px; cursor: pointer; transition: all 0.2s; text-align: left; position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+        .option-btn:hover { border-color: var(--accent-color); background: #f5f9ff; }
+        
+        .option-btn.correct-reveal { 
+            background: var(--success-color); color: white; border-color: var(--success-color); 
+            transform: scale(1.02); 
+        }
+        .option-btn.wrong-reveal { 
+            background: var(--danger-color); color: white; border-color: var(--danger-color); 
+            animation: shake 0.5s;
+        }
+        @keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-5px);} 75% {transform: translateX(5px);} }
+
+        .control-bar {
+            height: 70px; width: 100%; display: flex; justify-content: space-between; align-items: center;
+            border-top: 1px solid rgba(0,0,0,0.08); padding: 0 20px; background: rgba(255,255,255,0.5); flex-shrink: 0;
+        }
+        .btn-nav { 
+            padding: 10px 16px; border-radius: 10px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; 
+            transition: opacity 0.2s; display: flex; align-items: center; justify-content: center;
+        }
+        .btn-nav:active { transform: scale(0.96); }
+        .btn-secondary { background: rgba(0,0,0,0.06); color: var(--text-primary); }
+        .btn-primary { background: var(--accent-color); color: white; }
+        .btn-danger { background: rgba(255, 59, 48, 0.1); color: var(--danger-color); }
+        
+        .leaderboard-box {
+            width: 100%; max-width: 400px; background: rgba(255,255,255,0.6); 
+            border-radius: 16px; padding: 15px; max-height: 200px; overflow-y: auto;
+            margin-bottom: 20px; border: 1px solid rgba(0,0,0,0.05);
+        }
+        .lb-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 14px; }
+        .lb-row:last-child { border-bottom: none; }
+        .lb-name { font-weight: 600; }
+        .lb-score { color: var(--accent-color); font-weight: 700; }
+
+        .toast {
+            position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); color: white; padding: 8px 20px; border-radius: 30px;
+            font-size: 14px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 20;
+        }
+        .toast.visible { opacity: 1; }
+
+        @media (max-width: 600px) {
+            .app-window { width: 100%; height: 100%; border-radius: 0; }
+            .level-grid { gap: 8px; }
+            .control-bar { padding: 0 15px; }
+            h1 { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="celebration-canvas"></canvas>
+
+    <div class="app-window" id="main-window">
+        <div class="window-header">
+            <div class="traffic-lights">
+                <div class="light red" onclick="universalClose()"></div>
+                <div class="light yellow"></div>
+                <div class="light green"></div>
+            </div>
+            <div class="window-title">English Mastery Pro</div>
+        </div>
+
+        <div id="screen-login" class="content-area screen active">
+            <h1>Welcome Back</h1>
+            <p class="subtitle">Enter your name to begin.</p>
+            <input type="text" id="username" class="username-input" placeholder="Your Name" autocomplete="off">
+            <div class="avatar-grid">
+                <div class="avatar-option" onclick="selectAvatar(this)">🐼</div>
+                <div class="avatar-option" onclick="selectAvatar(this)">🦁</div>
+                <div class="avatar-option" onclick="selectAvatar(this)">🦊</div>
+                <div class="avatar-option" onclick="selectAvatar(this)">🐯</div>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-nav btn-secondary" onclick="toggleLeaderboard()">🏆 Leaders</button>
+                <button class="btn-nav btn-primary" onclick="goToLevelSelect()" style="padding: 12px 30px;">Start</button>
+            </div>
+            <div id="leaderboard-container" style="display:none; width:100%; margin-top:20px; align-items:center; flex-direction:column;">
+                <h3>Local Leaderboard</h3>
+                <div class="leaderboard-box" id="lb-list"></div>
+            </div>
+        </div>
+
+        <div id="screen-levels" class="content-area screen">
+            <h1>Select Level</h1>
+            <p class="subtitle">Choose your challenge.</p>
+            <div class="level-grid">
+                <div class="level-card" onclick="startLevel('Easy')"><h3>Easy</h3><p>Class 5-6</p></div>
+                <div class="level-card" onclick="startLevel('Moderate')"><h3>Moderate</h3><p>Class 7-8</p></div>
+                <div class="level-card" onclick="startLevel('Hard')"><h3>Hard</h3><p>Class 9-10</p></div>
+            </div>
+            <button class="btn-nav btn-secondary" onclick="switchScreen('login')" style="margin-top: 30px;">Back</button>
+        </div>
+
+        <div id="screen-game" class="screen" style="height: 100%;">
+            <div class="content-area" style="padding-bottom: 0;">
+                <div class="hud-top">
+                    <div class="user-pill"><span id="game-avatar"></span> <span id="game-username"></span></div>
+                    <div class="user-pill" id="level-display"></div>
+                </div>
+                <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; width: 100%; align-items: center;">
+                    <div style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 10px;">
+                        Question <span id="q-num">1</span> of 15
+                    </div>
+                    <div id="question-text" class="question-text"></div>
+                    <div id="options-container" class="options-grid"></div>
+                </div>
+            </div>
+            <div class="control-bar">
+                <button id="btn-prev" class="btn-nav btn-secondary" onclick="prevQuestion()">Back</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-nav btn-danger" onclick="resetCurrentQuestion()">Reset</button>
+                    <button class="btn-nav btn-secondary" onclick="endGame()">End Game</button>
+                </div>
+                <button id="btn-next" class="btn-nav btn-primary" onclick="manualNext()">Next ➜</button>
+            </div>
+            <div id="toast-msg" class="toast">Try Again!</div>
+        </div>
+
+        <div id="screen-result" class="content-area screen">
+            <h1 id="result-emoji" style="font-size: 50px; margin-bottom: 10px;">🎉</h1>
+            <h2 id="result-title">Well Done!</h2>
+            <p id="result-desc" class="subtitle">You completed the session.</p>
+            
+            <div style="background: white; padding: 20px; border-radius: 16px; width: 100%; max-width: 300px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <span>Score</span>
+                    <span id="final-score" style="font-weight:700; color:var(--accent-color);">0/15</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span>Accuracy</span>
+                    <span id="final-acc">0%</span>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 15px;">
+                <button class="btn-nav btn-secondary" onclick="universalClose()">Main Menu</button>
+                <button class="btn-nav btn-primary" onclick="restartLevel()">Replay</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- UPDATED & CORRECTED DATABASE ---
+        const DB = {
+            Easy: [
+                { q: "The boy ____ to the market and ____ some milk.", o: ["go, buy", "went, bought", "gone, buy", "going, buying"], a: 1 },
+                { q: "There ____ a cat under the table that ____ sleeping.", o: ["is, is", "are, are", "is, are", "were, is"], a: 0 },
+                { q: "She ____ not like coffee, but she ____ tea.", o: ["do, like", "does, likes", "doing, liking", "does, like"], a: 1 },
+                { q: "My father ____ a doctor and he ____ in a hospital.", o: ["is, works", "are, working", "was, work", "is, work"], a: 0 },
+                { q: "They ____ playing football when it ____ to rain.", o: ["were, started", "was, start", "are, starting", "were, start"], a: 0 },
+                { q: "Please ____ the door when you ____ out.", o: ["shut, go", "shuts, goes", "shutting, going", "shut, went"], a: 0 },
+                { q: "The sun ____ very bright today because there ____ no clouds.", o: ["shines, is", "is shining, are", "shine, were", "shining, is"], a: 1 },
+                { q: "I ____ my homework before I ____ dinner.", o: ["finish, eat", "finished, ate", "finishing, eating", "finishes, eats"], a: 1 },
+                { q: "Birds ____ nests to ____ their eggs.", o: ["build, lay", "builds, laid", "building, laying", "built, lay"], a: 0 },
+                { q: "He ____ fast but he ____ the bus.", o: ["run, miss", "ran, missed", "running, missing", "runs, missed"], a: 1 },
+                { q: "We ____ to the zoo last Sunday and ____ a lion.", o: ["go, see", "went, saw", "gone, seen", "going, seeing"], a: 1 },
+                { q: "Apples ____ red, but this one ____ green.", o: ["are, is", "is, are", "was, were", "are, are"], a: 0 },
+                { q: "Can you ____ me ____ this box?", o: ["help, lift", "helps, lifting", "helped, lifted", "help, lifted"], a: 0 },
+                { q: "She always ____ her teeth before she ____ to bed.", o: ["brush, go", "brushes, goes", "brushed, went", "brushing, going"], a: 1 },
+                { q: "The teacher ____ angry because the students ____ noisy.", o: ["was, were", "were, was", "is, is", "are, was"], a: 0 }
+            ],
+            Moderate: [
+                { q: "While I ____ the road, I ____ a wallet.", o: ["crossed, find", "was crossing, found", "crossing, found", "cross, find"], a: 1 },
+                { q: "The train ____ before we ____ the station.", o: ["left, reached", "had left, reached", "leaves, reach", "has left, reaching"], a: 1 },
+                { q: "Neither the teacher nor the students ____ aware of the test that ____ scheduled.", o: ["was, was", "were, was", "is, are", "are, is"], a: 1 },
+                { q: "If it ____ tomorrow, we ____ cancel the picnic.", o: ["rains, will", "rained, would", "raining, will", "rain, shall"], a: 0 },
+                { q: "This is the man ____ car was ____ yesterday.", o: ["who, stole", "whose, stolen", "whom, stealing", "who's, stolen"], a: 1 },
+                { q: "She is ____ tired ____ cook dinner tonight.", o: ["so, that", "too, to", "very, for", "too, for"], a: 1 },
+                { q: "Everyone ____ happy with the decision, ____ they?", o: ["was, weren't", "is, isn't", "were, wasn't", "are, aren't"], a: 0 },
+                { q: "Although he worked ____, he could not ____ the deadline.", o: ["hardly, meet", "hard, meet", "harder, met", "hardest, meeting"], a: 1 },
+                { q: "The cake ____ by my mother ____ delicious.", o: ["baked, tastes", "baking, taste", "bake, tasting", "baked, taste"], a: 0 },
+                { q: "Unless you ____ hard, you will not ____.", o: ["work, succeed", "works, succeeds", "worked, succeeded", "working, success"], a: 0 },
+                { q: "It has been raining ____ morning, so the match is ____.", o: ["for, cancel", "since, cancelled", "from, cancelling", "since, cancel"], a: 1 },
+                { q: "He speaks as if he ____ the owner, though he ____ just an employee.", o: ["was, is", "were, is", "is, was", "were, were"], a: 1 },
+                { q: "Not only ____ play the guitar, but he also ____.", o: ["does he, sings", "he does, sing", "did he, singing", "does he, sing"], a: 0 },
+                { q: "The furniture in this room ____ old and needs to be ____.", o: ["are, replaced", "is, replaced", "were, replacing", "have, replace"], a: 1 },
+                { q: "By next year, I ____ ____ in this city for ten years.", o: ["will have, lived", "would have, live", "will be, living", "shall, lived"], a: 0 }
+            ],
+            Hard: [
+                { q: "Had I ____ the consequences, I ____ never have agreed.", o: ["knew, would", "known, would", "known, will", "know, should"], a: 1 },
+                { q: "Scarcely had the police ____ the scene ____ the thieves fled.", o: ["arrived, than", "reached, when", "arrived, when", "reaching, than"], a: 1 },
+                { q: "It is high time we ____ home, lest we ____ late.", o: ["go, are", "went, should be", "gone, will be", "went, are"], a: 1 },
+                { q: "The jury ____ divided in their opinion, leading to ____ being delayed.", o: ["was, judgment", "were, judgment", "is, decision", "are, decide"], a: 1 },
+                { q: "____ being wealthy, he is unhappy, which is ____.", o: ["Despite, irony", "Although, ironic", "In spite of, ironic", "Despite of, irony"], a: 2 },
+                { q: "No sooner did I ____ my eyes ____ I fell asleep.", o: ["close, than", "closed, when", "close, then", "closing, than"], a: 0 },
+                { q: "He suggested that she ____ a doctor immediately before the condition ____.", o: ["see, worsens", "sees, worsened", "saw, worsen", "seeing, worsening"], a: 0 },
+                { q: "Seldom ____ such a beautiful sunset in this part of the world.", o: ["one sees", "does one see", "one see", "do one sees"], a: 1 },
+                { q: "The number of applicants ____ increasing, yet a number of them ____ unqualified.", o: ["is, are", "are, is", "is, is", "are, are"], a: 0 },
+                { q: "I would rather you ____ not ____ that loud music.", o: ["did, play", "do, play", "had, played", "would, playing"], a: 0 },
+                { q: "Having ____ his work, he went out for a walk to ____ himself.", o: ["finish, refresh", "finished, refresh", "finishing, refreshing", "finished, refreshed"], a: 1 },
+                { q: "Little ____ he know that his friends ____ planning a surprise.", o: ["did, were", "does, was", "did, was", "do, were"], a: 0 },
+                { q: "Whatever ____ happen, I shall remain ____ to my principles.", o: ["may, true", "might, truth", "can, truly", "will, truthful"], a: 0 },
+                { q: "She is one of the few people who ____ how to operate this machine ____.", o: ["knows, correct", "know, correctly", "knows, correctly", "knowing, correct"], a: 1 },
+                { q: "By the time the fire brigade ____, the building ____ to the ground.", o: ["arrived, had burnt", "arrives, burnt", "arrived, burnt", "arriving, had burnt"], a: 0 }
+            ]
+        };
+
+        // --- STATE & STORAGE ---
+        let state = {
+            username: "", avatar: "", level: "", qIndex: 0,
+            mistakesMade: new Array(15).fill(false),
+            isLocked: false, currentQuestions: []
+        };
+        const screens = {
+            login: document.getElementById('screen-login'),
+            level: document.getElementById('screen-levels'),
+            game: document.getElementById('screen-game'),
+            result: document.getElementById('screen-result')
+        };
+        
+        // --- CORE FUNCTIONS ---
+        function universalClose() { location.reload(); }
+        function switchScreen(name) {
+            Object.values(screens).forEach(s => s.classList.remove('active'));
+            screens[name].classList.add('active');
+        }
+
+        // --- LEADERBOARD LOGIC ---
+        function toggleLeaderboard() {
+            const container = document.getElementById('leaderboard-container');
+            const list = document.getElementById('lb-list');
+            if (container.style.display === 'flex') {
+                container.style.display = 'none';
+                return;
+            }
+            container.style.display = 'flex';
+            list.innerHTML = '';
+            
+            const lbData = JSON.parse(localStorage.getItem('grammar_lb')) || [];
+            if(lbData.length === 0) {
+                list.innerHTML = '<div style="text-align:center; padding:10px; color:#999;">No records yet</div>';
+            } else {
+                lbData.sort((a,b) => b.score - a.score);
+                lbData.slice(0, 10).forEach(item => {
+                    const row = document.createElement('div');
+                    row.className = 'lb-row';
+                    row.innerHTML = `<span class="lb-name">${item.avatar} ${item.name} (${item.level})</span> <span class="lb-score">${item.score}/15</span>`;
+                    list.appendChild(row);
+                });
+            }
+        }
+
+        function saveScore(score) {
+            let lbData = JSON.parse(localStorage.getItem('grammar_lb')) || [];
+            lbData.push({
+                name: state.username,
+                avatar: state.avatar,
+                level: state.level,
+                score: score,
+                date: new Date().toISOString()
+            });
+            localStorage.setItem('grammar_lb', JSON.stringify(lbData));
+        }
+
+        // --- SETUP ---
+        function selectAvatar(el) {
+            document.querySelectorAll('.avatar-option').forEach(a => a.classList.remove('selected'));
+            el.classList.add('selected');
+            state.avatar = el.textContent;
+        }
+
+        function goToLevelSelect() {
+            const name = document.getElementById('username').value.trim();
+            if (!name) return alert("Enter name");
+            if (!state.avatar) return alert("Select avatar");
+            state.username = name;
+            switchScreen('level');
+        }
+
+        function startLevel(lvl) {
+            state.level = lvl;
+            state.currentQuestions = DB[lvl];
+            state.qIndex = 0;
+            state.mistakesMade = new Array(15).fill(false);
+            
+            document.getElementById('game-avatar').textContent = state.avatar;
+            document.getElementById('game-username').textContent = state.username;
+            document.getElementById('level-display').textContent = lvl;
+            
+            switchScreen('game');
+            renderQuestion();
+        }
+
+        // --- GAME LOOP ---
+        function renderQuestion() {
+            state.isLocked = false;
+            const q = state.currentQuestions[state.qIndex];
+            document.getElementById('q-num').textContent = state.qIndex + 1;
+            document.getElementById('question-text').innerHTML = q.q.replace(/____/g, '<span class="blank">____</span>');
+            
+            const box = document.getElementById('options-container');
+            box.innerHTML = '';
+            
+            q.o.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = opt;
+                btn.onclick = () => handleAnswer(btn, idx, q.a);
+                box.appendChild(btn);
+            });
+
+            document.getElementById('btn-prev').disabled = (state.qIndex === 0);
+            
+            const nextBtn = document.getElementById('btn-next');
+            if (state.qIndex === 14) {
+                nextBtn.textContent = "Finish ➜";
+                nextBtn.onclick = endGame;
+            } else {
+                nextBtn.textContent = "Next ➜";
+                nextBtn.onclick = manualNext;
+            }
+        }
+
+        function handleAnswer(btn, idx, correctIdx) {
+            if (state.isLocked) return;
+
+            if (idx === correctIdx) {
+                state.isLocked = true;
+                btn.classList.add('correct-reveal');
+                fillBlanks(btn.textContent);
+                fireConfetti();
+                setTimeout(() => {
+                    if (state.qIndex < 14) {
+                        state.qIndex++;
+                        renderQuestion();
+                    } else {
+                        endGame();
+                    }
+                }, 3000);
+            } else {
+                btn.classList.add('wrong-reveal');
+                showToast("Try Again or click Next");
+                state.mistakesMade[state.qIndex] = true; 
+                setTimeout(() => btn.classList.remove('wrong-reveal'), 500);
+            }
+        }
+
+        function manualNext() {
+            if (!state.isLocked) {
+                state.mistakesMade[state.qIndex] = true;
+            }
+            if (state.qIndex < 14) {
+                state.qIndex++;
+                renderQuestion();
+            } else {
+                endGame();
+            }
+        }
+
+        function fillBlanks(txt) {
+            const words = txt.split(',').map(s => s.trim());
+            const blanks = document.querySelectorAll('.blank');
+            blanks.forEach((b, i) => { 
+                if(words[i]) { 
+                    b.textContent = words[i]; 
+                    b.style.color = '#34c759'; 
+                    b.style.borderBottom = 'none';
+                } 
+            });
+        }
+
+        function prevQuestion() {
+            if (state.qIndex > 0) {
+                state.qIndex--;
+                renderQuestion();
+            }
+        }
+        
+        function resetCurrentQuestion() { renderQuestion(); }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast-msg');
+            t.textContent = msg;
+            t.classList.add('visible');
+            setTimeout(() => t.classList.remove('visible'), 2000);
+        }
+
+        // --- END GAME MESSAGES ---
+        function endGame() {
+            const totalQuestions = state.qIndex + 1;
+            const mistakes = state.mistakesMade.slice(0, totalQuestions).filter(m => m).length;
+            const score = totalQuestions - mistakes;
+            const accuracy = Math.round((score / 15) * 100);
+
+            saveScore(score);
+
+            document.getElementById('final-score').textContent = `${score}/15`;
+            document.getElementById('final-acc').textContent = `${accuracy}%`;
+
+            const title = document.getElementById('result-title');
+            const desc = document.getElementById('result-desc');
+            const emoji = document.getElementById('result-emoji');
+
+            if (totalQuestions <= 5) {
+                emoji.textContent = "🌱";
+                title.textContent = "Good Start";
+                desc.textContent = "You've dipped your toes in. Keep going next time!";
+            } else if (totalQuestions <= 10) {
+                emoji.textContent = "🚀";
+                title.textContent = "Keep it Up";
+                desc.textContent = "You're making solid progress. Don't stop now!";
+            } else {
+                if (score >= 13) {
+                    emoji.textContent = "🏆";
+                    title.textContent = "Outstanding!";
+                    desc.textContent = "You are a true grammar master.";
+                    setTimeout(fireConfetti, 500);
+                } else if (score >= 8) {
+                    emoji.textContent = "⭐";
+                    title.textContent = "Good Job";
+                    desc.textContent = "You have good instincts, but there's room to improve.";
+                } else {
+                    emoji.textContent = "📚";
+                    title.textContent = "Needs Practice";
+                    desc.textContent = "Review the questions and try again!";
+                }
+            }
+
+            switchScreen('result');
+        }
+
+        function restartLevel() { startLevel(state.level); }
+
+        const canvas = document.getElementById('celebration-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize); resize();
+
+        function fireConfetti() {
+            for (let i = 0; i < 100; i++) {
+                particles.push({
+                    x: window.innerWidth/2, y: window.innerHeight/2,
+                    w: Math.random()*8+4, h: Math.random()*8+4,
+                    color: ['#ff5f57','#febc2e','#28c840','#007aff'][Math.floor(Math.random()*4)],
+                    vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15-3,
+                    grav: 0.2, drag: 0.95, life: 150
+                });
+            }
+            if(!animating) requestAnimationFrame(loop);
+        }
+
+        let animating = false;
+        function loop() {
+            if(particles.length===0) { animating=false; ctx.clearRect(0,0,canvas.width,canvas.height); return; }
+            animating = true;
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            for(let i=particles.length-1; i>=0; i--) {
+                let p = particles[i];
+                p.x+=p.vx; p.y+=p.vy; p.vy+=p.grav; p.vx*=p.drag; p.vy*=p.drag; p.life--;
+                ctx.fillStyle=p.color; ctx.fillRect(p.x,p.y,p.w,p.h);
+                if(p.life<=0) particles.splice(i,1);
+            }
+            requestAnimationFrame(loop);
+        }
+    </script>
+</body>
+</html>

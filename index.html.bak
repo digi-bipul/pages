@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grammar Mastery | macOS Edition</title>
+    <style>
+        :root {
+            --bg-gradient: radial-gradient(circle at 0% 0%, #a18cd1 0%, #fbc2eb 100%);
+            --glass-bg: rgba(255, 255, 255, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            --text-primary: #1d1d1f;
+            --text-secondary: #86868b;
+            --accent-color: #007aff; /* Apple Blue */
+            --accent-hover: #0062cc;
+            --success-color: #34c759; /* Apple Green */
+            --error-color: #ff3b30;   /* Apple Red */
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --radius-window: 20px;
+            --radius-btn: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-image: var(--bg-gradient);
+            background-size: cover;
+            background-attachment: fixed;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            color: var(--text-primary);
+        }
+
+        /* Abstract Background blobs for that aesthetic feel */
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -1;
+            opacity: 0.6;
+            animation: float 10s infinite ease-in-out;
+        }
+        .blob-1 { top: -10%; left: -10%; width: 500px; height: 500px; background: #ff9a9e; animation-delay: 0s; }
+        .blob-2 { bottom: -10%; right: -10%; width: 600px; height: 600px; background: #a18cd1; animation-delay: 5s; }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(30px, -30px); }
+        }
+
+        /* Main Window Container */
+        .app-window {
+            width: 90%;
+            max-width: 600px;
+            height: auto;
+            min-height: 500px;
+            max-height: 90vh;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-window);
+            box-shadow: var(--glass-shadow);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            animation: popIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.95) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* Header (Traffic Lights & Title) */
+        .window-header {
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            background: rgba(255,255,255,0.3);
+        }
+
+        .traffic-lights {
+            position: absolute;
+            left: 20px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .light { width: 12px; height: 12px; border-radius: 50%; }
+        .red { background: #ff5f57; border: 1px solid #e0443e; }
+        .yellow { background: #febc2e; border: 1px solid #dba524; }
+        .green { background: #28c840; border: 1px solid #1aab29; }
+
+        .window-title {
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--text-primary);
+            opacity: 0.8;
+        }
+
+        /* Content Area */
+        .content-area {
+            flex: 1;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow-y: auto;
+        }
+
+        /* Screens */
+        .screen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .screen.active { display: flex; }
+
+        /* Start Screen */
+        h1 { font-size: 28px; margin-bottom: 10px; font-weight: 700; letter-spacing: -0.5px; }
+        p.subtitle { font-size: 16px; color: var(--text-secondary); margin-bottom: 30px; line-height: 1.5; }
+
+        .btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            font-size: 16px;
+            font-weight: 500;
+            border-radius: var(--radius-btn);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+        }
+        .btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+        .btn:active { transform: scale(0.98); }
+
+        /* Game Screen */
+        .level-badge {
+            background: rgba(0,0,0,0.05);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 3px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--accent-color);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .question-text {
+            font-size: 20px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .blank {
+            display: inline-block;
+            min-width: 60px;
+            border-bottom: 2px solid var(--accent-color);
+            color: var(--accent-color);
+            padding: 0 5px;
+            font-weight: 700;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .option-card {
+            background: rgba(255,255,255,0.5);
+            border: 1px solid rgba(0,0,0,0.05);
+            padding: 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .option-card:hover {
+            background: rgba(255,255,255,0.8);
+            transform: scale(1.01);
+        }
+
+        .option-card.selected {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+            box-shadow: 0 4px 15px rgba(0,122,255,0.3);
+        }
+
+        .option-card.correct {
+            background: var(--success-color);
+            color: white;
+            border-color: var(--success-color);
+        }
+
+        .option-card.wrong {
+            background: var(--error-color);
+            color: white;
+            border-color: var(--error-color);
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        /* Check Circle Icon in options */
+        .option-circle {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(0,0,0,0.2);
+            border-radius: 50%;
+            margin-right: 15px;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+        .option-card.selected .option-circle { border-color: white; background: white; }
+        .option-card:not(.selected) .option-circle { border-color: currentColor; }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        /* Result Screen */
+        .score-display {
+            font-size: 64px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-color), #bc52ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .result-message {
+            font-size: 20px;
+            margin-bottom: 30px;
+            color: var(--text-secondary);
+        }
+
+        /* Footer */
+        .window-footer {
+            padding: 15px 30px;
+            border-top: 1px solid rgba(0,0,0,0.05);
+            background: rgba(255,255,255,0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Utility for fade transition */
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <div class="app-window">
+        <div class="window-header">
+            <div class="traffic-lights">
+                <div class="light red"></div>
+                <div class="light yellow"></div>
+                <div class="light green"></div>
+            </div>
+            <div class="window-title">English Mastery</div>
+        </div>
+
+        <div class="content-area">
+            
+            <div id="start-screen" class="screen active">
+                <h1>Grammar Challenge</h1>
+                <p class="subtitle">Master English syntax through 3 levels of difficulty.<br>20 Questions designed for Classes 5 to 10.</p>
+                <button class="btn" onclick="startGame()">Start Game</button>
+            </div>
+
+            <div id="game-screen" class="screen">
+                <div class="level-badge" id="level-badge">Easy Level</div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progress-bar"></div>
+                </div>
+                
+                <div id="question-container" class="fade-in">
+                    </div>
+                
+                <div class="options-grid" id="options-container">
+                    </div>
+            </div>
+
+            <div id="result-screen" class="screen">
+                <div class="score-display" id="final-score">0/20</div>
+                <div class="result-message" id="result-msg">Well Done!</div>
+                <button class="btn" onclick="location.reload()">Play Again</button>
+            </div>
+
+        </div>
+
+        <div class="window-footer">
+            <span id="q-counter">Question 0 of 20</span>
+            <span>Educational Tool</span>
+        </div>
+    </div>
+
+    <script>
+        // --- GAME DATA ---
+        // Format: { sentence: "String with _", parts: ["_"], options: ["a, b", "c, d"], correctIndex: 0 }
+        // Note: The 'parts' array logic is handled by splitting the sentence by '____'.
+        
+        const questions = [
+            // --- EASY (Class 5-6) [7 Questions] ---
+            {
+                text: "The dog ____ loudly when the postman ____ the bell.",
+                options: ["barked, rang", "barking, ring", "bark, rings", "barked, ring"],
+                correct: 0,
+                level: "Easy"
+            },
+            {
+                text: "She ____ apples, but she ____ not like oranges.",
+                options: ["like, do", "likes, does", "liking, done", "likes, do"],
+                correct: 1,
+                level: "Easy"
+            },
+            {
+                text: "We ____ to the park yesterday and ____ football.",
+                options: ["go, play", "went, played", "going, playing", "gone, played"],
+                correct: 1,
+                level: "Easy"
+            },
+            {
+                text: "There ____ many books on the shelf, but only one ____ open.",
+                options: ["are, is", "is, are", "was, were", "are, are"],
+                correct: 0,
+                level: "Easy"
+            },
+            {
+                text: "My brother ____ tall, and he ____ basketball very well.",
+                options: ["is, plays", "are, play", "is, playing", "was, play"],
+                correct: 0,
+                level: "Easy"
+            },
+            {
+                text: "Please ____ your shoes before you ____ the room.",
+                options: ["removed, entering", "remove, enter", "removes, entered", "remove, entering"],
+                correct: 1,
+                level: "Easy"
+            },
+            {
+                text: "The sun ____ in the east and ____ in the west.",
+                options: ["rise, set", "rises, sets", "rising, setting", "rose, set"],
+                correct: 1,
+                level: "Easy"
+            },
+
+            // --- MODERATE (Class 7-8) [7 Questions] ---
+            {
+                text: "While I ____ my homework, the phone ____ ringing.",
+                options: ["was doing, started", "am doing, start", "did, starting", "was doing, start"],
+                correct: 0,
+                level: "Moderate"
+            },
+            {
+                text: "She ____ ____ here for ten years by next month.",
+                options: ["will have, lived", "has, living", "is, lived", "will be, live"],
+                correct: 0,
+                level: "Moderate"
+            },
+            {
+                text: "The teacher told the students to ____ quiet and ____ to the lecture.",
+                options: ["keep, listen", "kept, listened", "keeping, listening", "keep, listened"],
+                correct: 0,
+                level: "Moderate"
+            },
+            {
+                text: "Neither the captain nor the players ____ responsible for the loss, though the coach ____ blamed.",
+                options: ["was, were", "were, was", "are, is", "were, were"],
+                correct: 1, // 'players' is plural (closest to verb), coach is singular
+                level: "Moderate"
+            },
+            {
+                text: "It is essential that he ____ the documents before he ____ the office.",
+                options: ["sign, leaves", "signs, left", "sign, leave", "signing, leaving"],
+                correct: 0, // Subjunctive 'sign', indicative 'leaves'
+                level: "Moderate"
+            },
+            {
+                text: "The novel was so ____ that I could not stop ____ it.",
+                options: ["interested, reading", "interesting, reading", "interest, read", "interesting, read"],
+                correct: 1,
+                level: "Moderate"
+            },
+            {
+                text: "By the time we ____ the station, the train ____ already left.",
+                options: ["reached, had", "reach, has", "reached, have", "reaching, had"],
+                correct: 0,
+                level: "Moderate"
+            },
+
+            // --- HARD (Class 9-10) [6 Questions] ---
+            {
+                text: "Had I ____ about the traffic, I ____ ____ taken a different route.",
+                options: ["know, will have", "known, would have", "knew, would have", "known, will have"],
+                correct: 1,
+                level: "Hard"
+            },
+            {
+                text: "The jury ____ divided in their opinions, so the verdict ____ delayed.",
+                options: ["was, were", "were, was", "is, are", "are, is"],
+                correct: 1, // Jury divided treated as plural individuals, verdict is singular event
+                level: "Hard"
+            },
+            {
+                text: "Scarcely had he ____ the room ____ the lights went out.",
+                options: ["entered, when", "enter, than", "entered, than", "entering, when"],
+                correct: 0,
+                level: "Hard"
+            },
+            {
+                text: "____ being tired, he continued to work, ____ his dedication.",
+                options: ["Despite, proving", "Although, proved", "In spite, prove", "Despite, proved"],
+                correct: 0,
+                level: "Hard"
+            },
+            {
+                text: "The heavy rains ____ the match ____ called off.",
+                options: ["caused, to be", "cause, to being", "caused, being", "causing, be"],
+                correct: 0,
+                level: "Hard"
+            },
+            {
+                text: "He spoke as if he ____ the CEO, even though he ____ just started working there.",
+                options: ["is, has", "were, had", "was, has", "were, has"],
+                correct: 1, // Subjunctive 'were' for contrary to fact
+                level: "Hard"
+            }
+        ];
+
+        // --- GAME LOGIC ---
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let canAnswer = false;
+
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const resultScreen = document.getElementById('result-screen');
+        
+        const questionContainer = document.getElementById('question-container');
+        const optionsContainer = document.getElementById('options-container');
+        const levelBadge = document.getElementById('level-badge');
+        const progressBar = document.getElementById('progress-bar');
+        const qCounter = document.getElementById('q-counter');
+
+        function startGame() {
+            startScreen.classList.remove('active');
+            gameScreen.classList.add('active');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const q = questions[currentQuestionIndex];
+            canAnswer = true;
+            
+            // Update UI Info
+            levelBadge.textContent = `${q.level} Level`;
+            qCounter.textContent = `Question ${currentQuestionIndex + 1} of ${questions.length}`;
+            
+            const progressPct = ((currentQuestionIndex) / questions.length) * 100;
+            progressBar.style.width = `${progressPct}%`;
+
+            // Render Text with Blanks
+            // We replace "____" with span elements for visual effect
+            const formattedText = q.text.replace(/____/g, '<span class="blank">____</span>');
+            questionContainer.innerHTML = `<div class="question-text">${formattedText}</div>`;
+            
+            // Reset Animation
+            questionContainer.classList.remove('fade-in');
+            void questionContainer.offsetWidth; // trigger reflow
+            questionContainer.classList.add('fade-in');
+
+            // Render Options
+            optionsContainer.innerHTML = '';
+            q.options.forEach((opt, index) => {
+                const card = document.createElement('div');
+                card.className = 'option-card';
+                card.innerHTML = `<div class="option-circle"></div> ${opt}`;
+                card.onclick = () => handleAnswer(index, card);
+                optionsContainer.appendChild(card);
+            });
+        }
+
+        function handleAnswer(selectedIndex, cardElement) {
+            if (!canAnswer) return;
+            canAnswer = false; // Prevent double clicking
+
+            const q = questions[currentQuestionIndex];
+            const isCorrect = selectedIndex === q.correct;
+            const options = document.querySelectorAll('.option-card');
+
+            // Visual Feedback
+            if (isCorrect) {
+                cardElement.classList.add('selected', 'correct');
+                score++;
+                fillBlanks(q.options[selectedIndex]);
+            } else {
+                cardElement.classList.add('selected', 'wrong');
+                // Highlight the correct one automatically after error
+                options[q.correct].classList.add('correct');
+                fillBlanks(q.options[q.correct]); // Show correct answer in text
+            }
+
+            // Wait then move to next
+            setTimeout(() => {
+                currentQuestionIndex++;
+                if (currentQuestionIndex < questions.length) {
+                    loadQuestion();
+                } else {
+                    endGame();
+                }
+            }, 1500);
+        }
+
+        function fillBlanks(answerString) {
+            // Split answer string by comma to get individual words
+            // e.g. "barked, rang" -> ["barked", "rang"]
+            // Be careful about spaces
+            const answers = answerString.split(',').map(s => s.trim());
+            const blanks = document.querySelectorAll('.blank');
+            
+            blanks.forEach((blank, i) => {
+                if (answers[i]) {
+                    blank.textContent = answers[i];
+                    blank.style.borderBottom = "none";
+                    blank.style.color = "var(--success-color)";
+                }
+            });
+        }
+
+        function endGame() {
+            gameScreen.classList.remove('active');
+            resultScreen.classList.add('active');
+            
+            const scoreDisplay = document.getElementById('final-score');
+            const resultMsg = document.getElementById('result-msg');
+            
+            scoreDisplay.textContent = `${score} / ${questions.length}`;
+            
+            const percentage = (score / questions.length) * 100;
+            if (percentage >= 90) {
+                resultMsg.textContent = "Outstanding! A true Grammar Master.";
+            } else if (percentage >= 70) {
+                resultMsg.textContent = "Great job! You have strong skills.";
+            } else if (percentage >= 50) {
+                resultMsg.textContent = "Good effort. Keep practicing!";
+            } else {
+                resultMsg.textContent = "Don't give up! Try again to improve.";
+            }
+        }
+
+    </script>
+</body>
+</html>
