@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>English Mastery Pro | Corrected Edition</title>
+    <title>English Mastery Pro | Interactive Edition</title>
     <style>
         :root {
             --bg-gradient: radial-gradient(circle at 50% 10%, #dbeafe 0%, #e0c3fc 100%);
@@ -38,32 +38,41 @@
             pointer-events: none; z-index: 1000;
         }
 
+        /* --- REACTION OVERLAY STYLES --- */
+        #reaction-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 2000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        }
+        #reaction-overlay.active { opacity: 1; pointer-events: all; }
+        
+        #reaction-emoji { font-size: 8rem; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3)); }
+
+        .anim-correct { animation: bounceHappy 1s infinite; }
+        @keyframes bounceHappy {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-20px) scale(1.1); }
+        }
+
+        .anim-wrong { animation: shakeNo 0.5s ease-in-out infinite; }
+        @keyframes shakeNo {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-15px) rotate(-5deg); }
+            75% { transform: translateX(15px) rotate(5deg); }
+        }
+
         .app-window {
-            width: 95%;
-            max-width: 700px;
-            height: 90vh;
-            max-height: 700px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius-window);
-            box-shadow: var(--glass-shadow);
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            z-index: 10;
-            overflow: hidden;
+            width: 95%; max-width: 700px; height: 90vh; max-height: 700px;
+            background: var(--glass-bg); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border); border-radius: var(--radius-window);
+            box-shadow: var(--glass-shadow); display: flex; flex-direction: column;
+            position: relative; z-index: 10; overflow: hidden;
         }
 
         .window-header {
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-bottom: 1px solid rgba(0,0,0,0.06);
-            background: rgba(255,255,255,0.4);
-            flex-shrink: 0;
+            height: 50px; display: flex; align-items: center; justify-content: center;
+            border-bottom: 1px solid rgba(0,0,0,0.06); background: rgba(255,255,255,0.4); flex-shrink: 0;
         }
 
         .traffic-lights { position: absolute; left: 20px; display: flex; gap: 8px; }
@@ -74,15 +83,9 @@
         .window-title { font-weight: 600; font-size: 15px; opacity: 0.9; }
 
         .content-area {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            width: 100%;
+            flex: 1; padding: 20px; overflow-y: auto; display: flex;
+            flex-direction: column; align-items: center; justify-content: center;
+            position: relative; width: 100%;
         }
 
         .screen { display: none; width: 100%; flex-direction: column; align-items: center; animation: fadeIn 0.4s ease; }
@@ -126,8 +129,20 @@
             font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 5px;
         }
 
+        /* --- QUESTION STYLES UPDATED --- */
+        .question-emoji {
+            font-size: 3.5rem; margin-bottom: 10px; display: inline-block;
+            filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.15));
+            animation: floatEmoji 3s ease-in-out infinite;
+        }
+        @keyframes floatEmoji {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-12px); }
+            100% { transform: translateY(0px); }
+        }
+
         .question-text { 
-            font-size: 20px; font-weight: 500; line-height: 1.5; margin: 10px 0 30px; 
+            font-size: 20px; font-weight: 500; line-height: 1.5; margin: 0 0 30px; 
             color: var(--text-primary); text-align: center; max-width: 90%;
         }
         .blank { 
@@ -152,9 +167,7 @@
         }
         .option-btn.wrong-reveal { 
             background: var(--danger-color); color: white; border-color: var(--danger-color); 
-            animation: shake 0.5s;
         }
-        @keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-5px);} 75% {transform: translateX(5px);} }
 
         .control-bar {
             height: 70px; width: 100%; display: flex; justify-content: space-between; align-items: center;
@@ -197,6 +210,10 @@
 <body>
 
     <canvas id="celebration-canvas"></canvas>
+
+    <div id="reaction-overlay">
+        <div id="reaction-emoji"></div>
+    </div>
 
     <div class="app-window" id="main-window">
         <div class="window-header">
@@ -288,58 +305,58 @@
     </div>
 
     <script>
-        // --- UPDATED & CORRECTED DATABASE ---
+        // --- DATABASE WITH RELEVANT EMOJIS ADDED ---
         const DB = {
             Easy: [
-                { q: "The boy ____ to the market and ____ some milk.", o: ["go, buy", "went, bought", "gone, buy", "going, buying"], a: 1 },
-                { q: "There ____ a cat under the table that ____ sleeping.", o: ["is, is", "are, are", "is, are", "were, is"], a: 0 },
-                { q: "She ____ not like coffee, but she ____ tea.", o: ["do, like", "does, likes", "doing, liking", "does, like"], a: 1 },
-                { q: "My father ____ a doctor and he ____ in a hospital.", o: ["is, works", "are, working", "was, work", "is, work"], a: 0 },
-                { q: "They ____ playing football when it ____ to rain.", o: ["were, started", "was, start", "are, starting", "were, start"], a: 0 },
-                { q: "Please ____ the door when you ____ out.", o: ["shut, go", "shuts, goes", "shutting, going", "shut, went"], a: 0 },
-                { q: "The sun ____ very bright today because there ____ no clouds.", o: ["shines, is", "is shining, are", "shine, were", "shining, is"], a: 1 },
-                { q: "I ____ my homework before I ____ dinner.", o: ["finish, eat", "finished, ate", "finishing, eating", "finishes, eats"], a: 1 },
-                { q: "Birds ____ nests to ____ their eggs.", o: ["build, lay", "builds, laid", "building, laying", "built, lay"], a: 0 },
-                { q: "He ____ fast but he ____ the bus.", o: ["run, miss", "ran, missed", "running, missing", "runs, missed"], a: 1 },
-                { q: "We ____ to the zoo last Sunday and ____ a lion.", o: ["go, see", "went, saw", "gone, seen", "going, seeing"], a: 1 },
-                { q: "Apples ____ red, but this one ____ green.", o: ["are, is", "is, are", "was, were", "are, are"], a: 0 },
-                { q: "Can you ____ me ____ this box?", o: ["help, lift", "helps, lifting", "helped, lifted", "help, lifted"], a: 0 },
-                { q: "She always ____ her teeth before she ____ to bed.", o: ["brush, go", "brushes, goes", "brushed, went", "brushing, going"], a: 1 },
-                { q: "The teacher ____ angry because the students ____ noisy.", o: ["was, were", "were, was", "is, is", "are, was"], a: 0 }
+                { q: "The boy ____ to the market and ____ some milk.", o: ["go, buy", "went, bought", "gone, buy", "going, buying"], a: 1, emoji: "🛍️" },
+                { q: "There ____ a cat under the table that ____ sleeping.", o: ["is, is", "are, are", "is, are", "were, is"], a: 0, emoji: "🐱" },
+                { q: "She ____ not like coffee, but she ____ tea.", o: ["do, like", "does, likes", "doing, liking", "does, like"], a: 1, emoji: "☕" },
+                { q: "My father ____ a doctor and he ____ in a hospital.", o: ["is, works", "are, working", "was, work", "is, work"], a: 0, emoji: "👨‍⚕️" },
+                { q: "They ____ playing football when it ____ to rain.", o: ["were, started", "was, start", "are, starting", "were, start"], a: 0, emoji: "⚽" },
+                { q: "Please ____ the door when you ____ out.", o: ["shut, go", "shuts, goes", "shutting, going", "shut, went"], a: 0, emoji: "🚪" },
+                { q: "The sun ____ very bright today because there ____ no clouds.", o: ["shines, is", "is shining, are", "shine, were", "shining, is"], a: 1, emoji: "☀️" },
+                { q: "I ____ my homework before I ____ dinner.", o: ["finish, eat", "finished, ate", "finishing, eating", "finishes, eats"], a: 1, emoji: "🍽️" },
+                { q: "Birds ____ nests to ____ their eggs.", o: ["build, lay", "builds, laid", "building, laying", "built, lay"], a: 0, emoji: "🐦" },
+                { q: "He ____ fast but he ____ the bus.", o: ["run, miss", "ran, missed", "running, missing", "runs, missed"], a: 1, emoji: "🚌" },
+                { q: "We ____ to the zoo last Sunday and ____ a lion.", o: ["go, see", "went, saw", "gone, seen", "going, seeing"], a: 1, emoji: "🦁" },
+                { q: "Apples ____ red, but this one ____ green.", o: ["are, is", "is, are", "was, were", "are, are"], a: 0, emoji: "🍎" },
+                { q: "Can you ____ me ____ this box?", o: ["help, lift", "helps, lifting", "helped, lifted", "help, lifted"], a: 0, emoji: "📦" },
+                { q: "She always ____ her teeth before she ____ to bed.", o: ["brush, go", "brushes, goes", "brushed, went", "brushing, going"], a: 1, emoji: "🪥" },
+                { q: "The teacher ____ angry because the students ____ noisy.", o: ["was, were", "were, was", "is, is", "are, was"], a: 0, emoji: "👩‍🏫" }
             ],
             Moderate: [
-                { q: "While I ____ the road, I ____ a wallet.", o: ["crossed, find", "was crossing, found", "crossing, found", "cross, find"], a: 1 },
-                { q: "The train ____ before we ____ the station.", o: ["left, reached", "had left, reached", "leaves, reach", "has left, reaching"], a: 1 },
-                { q: "Neither the teacher nor the students ____ aware of the test that ____ scheduled.", o: ["was, was", "were, was", "is, are", "are, is"], a: 1 },
-                { q: "If it ____ tomorrow, we ____ cancel the picnic.", o: ["rains, will", "rained, would", "raining, will", "rain, shall"], a: 0 },
-                { q: "This is the man ____ car was ____ yesterday.", o: ["who, stole", "whose, stolen", "whom, stealing", "who's, stolen"], a: 1 },
-                { q: "She is ____ tired ____ cook dinner tonight.", o: ["so, that", "too, to", "very, for", "too, for"], a: 1 },
-                { q: "Everyone ____ happy with the decision, ____ they?", o: ["was, weren't", "is, isn't", "were, wasn't", "are, aren't"], a: 0 },
-                { q: "Although he worked ____, he could not ____ the deadline.", o: ["hardly, meet", "hard, meet", "harder, met", "hardest, meeting"], a: 1 },
-                { q: "The cake ____ by my mother ____ delicious.", o: ["baked, tastes", "baking, taste", "bake, tasting", "baked, taste"], a: 0 },
-                { q: "Unless you ____ hard, you will not ____.", o: ["work, succeed", "works, succeeds", "worked, succeeded", "working, success"], a: 0 },
-                { q: "It has been raining ____ morning, so the match is ____.", o: ["for, cancel", "since, cancelled", "from, cancelling", "since, cancel"], a: 1 },
-                { q: "He speaks as if he ____ the owner, though he ____ just an employee.", o: ["was, is", "were, is", "is, was", "were, were"], a: 1 },
-                { q: "Not only ____ play the guitar, but he also ____.", o: ["does he, sings", "he does, sing", "did he, singing", "does he, sing"], a: 0 },
-                { q: "The furniture in this room ____ old and needs to be ____.", o: ["are, replaced", "is, replaced", "were, replacing", "have, replace"], a: 1 },
-                { q: "By next year, I ____ ____ in this city for ten years.", o: ["will have, lived", "would have, live", "will be, living", "shall, lived"], a: 0 }
+                { q: "While I ____ the road, I ____ a wallet.", o: ["crossed, find", "was crossing, found", "crossing, found", "cross, find"], a: 1, emoji: "👛" },
+                { q: "The train ____ before we ____ the station.", o: ["left, reached", "had left, reached", "leaves, reach", "has left, reaching"], a: 1, emoji: "🚂" },
+                { q: "Neither the teacher nor the students ____ aware of the test that ____ scheduled.", o: ["was, was", "were, was", "is, are", "are, is"], a: 1, emoji: "👨‍🏫" },
+                { q: "If it ____ tomorrow, we ____ cancel the picnic.", o: ["rains, will", "rained, would", "raining, will", "rain, shall"], a: 0, emoji: "☔" },
+                { q: "This is the man ____ car was ____ yesterday.", o: ["who, stole", "whose, stolen", "whom, stealing", "who's, stolen"], a: 1, emoji: "🚗" },
+                { q: "She is ____ tired ____ cook dinner tonight.", o: ["so, that", "too, to", "very, for", "too, for"], a: 1, emoji: "🍳" },
+                { q: "Everyone ____ happy with the decision, ____ they?", o: ["was, weren't", "is, isn't", "were, wasn't", "are, aren't"], a: 0, emoji: "😊" },
+                { q: "Although he worked ____, he could not ____ the deadline.", o: ["hardly, meet", "hard, meet", "harder, met", "hardest, meeting"], a: 1, emoji: "💼" },
+                { q: "The cake ____ by my mother ____ delicious.", o: ["baked, tastes", "baking, taste", "bake, tasting", "baked, taste"], a: 0, emoji: "🎂" },
+                { q: "Unless you ____ hard, you will not ____.", o: ["work, succeed", "works, succeeds", "worked, succeeded", "working, success"], a: 0, emoji: "🏆" },
+                { q: "It has been raining ____ morning, so the match is ____.", o: ["for, cancel", "since, cancelled", "from, cancelling", "since, cancel"], a: 1, emoji: "🌧️" },
+                { q: "He speaks as if he ____ the owner, though he ____ just an employee.", o: ["was, is", "were, is", "is, was", "were, were"], a: 1, emoji: "👔" },
+                { q: "Not only ____ play the guitar, but he also ____.", o: ["does he, sings", "he does, sing", "did he, singing", "does he, sing"], a: 0, emoji: "🎸" },
+                { q: "The furniture in this room ____ old and needs to be ____.", o: ["are, replaced", "is, replaced", "were, replacing", "have, replace"], a: 1, emoji: "🪑" },
+                { q: "By next year, I ____ ____ in this city for ten years.", o: ["will have, lived", "would have, live", "will be, living", "shall, lived"], a: 0, emoji: "🏙️" }
             ],
             Hard: [
-                { q: "Had I ____ the consequences, I ____ never have agreed.", o: ["knew, would", "known, would", "known, will", "know, should"], a: 1 },
-                { q: "Scarcely had the police ____ the scene ____ the thieves fled.", o: ["arrived, than", "reached, when", "arrived, when", "reaching, than"], a: 1 },
-                { q: "It is high time we ____ home, lest we ____ late.", o: ["go, are", "went, should be", "gone, will be", "went, are"], a: 1 },
-                { q: "The jury ____ divided in their opinion, leading to ____ being delayed.", o: ["was, judgment", "were, judgment", "is, decision", "are, decide"], a: 1 },
-                { q: "____ being wealthy, he is unhappy, which is ____.", o: ["Despite, irony", "Although, ironic", "In spite of, ironic", "Despite of, irony"], a: 2 },
-                { q: "No sooner did I ____ my eyes ____ I fell asleep.", o: ["close, than", "closed, when", "close, then", "closing, than"], a: 0 },
-                { q: "He suggested that she ____ a doctor immediately before the condition ____.", o: ["see, worsens", "sees, worsened", "saw, worsen", "seeing, worsening"], a: 0 },
-                { q: "Seldom ____ such a beautiful sunset in this part of the world.", o: ["one sees", "does one see", "one see", "do one sees"], a: 1 },
-                { q: "The number of applicants ____ increasing, yet a number of them ____ unqualified.", o: ["is, are", "are, is", "is, is", "are, are"], a: 0 },
-                { q: "I would rather you ____ not ____ that loud music.", o: ["did, play", "do, play", "had, played", "would, playing"], a: 0 },
-                { q: "Having ____ his work, he went out for a walk to ____ himself.", o: ["finish, refresh", "finished, refresh", "finishing, refreshing", "finished, refreshed"], a: 1 },
-                { q: "Little ____ he know that his friends ____ planning a surprise.", o: ["did, were", "does, was", "did, was", "do, were"], a: 0 },
-                { q: "Whatever ____ happen, I shall remain ____ to my principles.", o: ["may, true", "might, truth", "can, truly", "will, truthful"], a: 0 },
-                { q: "She is one of the few people who ____ how to operate this machine ____.", o: ["knows, correct", "know, correctly", "knows, correctly", "knowing, correct"], a: 1 },
-                { q: "By the time the fire brigade ____, the building ____ to the ground.", o: ["arrived, had burnt", "arrives, burnt", "arrived, burnt", "arriving, had burnt"], a: 0 }
+                { q: "Had I ____ the consequences, I ____ never have agreed.", o: ["knew, would", "known, would", "known, will", "know, should"], a: 1, emoji: "⚡" },
+                { q: "Scarcely had the police ____ the scene ____ the thieves fled.", o: ["arrived, than", "reached, when", "arrived, when", "reaching, than"], a: 1, emoji: "🚓" },
+                { q: "It is high time we ____ home, lest we ____ late.", o: ["go, are", "went, should be", "gone, will be", "went, are"], a: 1, emoji: "⏳" },
+                { q: "The jury ____ divided in their opinion, leading to ____ being delayed.", o: ["was, judgment", "were, judgment", "is, decision", "are, decide"], a: 1, emoji: "⚖️" },
+                { q: "____ being wealthy, he is unhappy, which is ____.", o: ["Despite, irony", "Although, ironic", "In spite of, ironic", "Despite of, irony"], a: 2, emoji: "💰" },
+                { q: "No sooner did I ____ my eyes ____ I fell asleep.", o: ["close, than", "closed, when", "close, then", "closing, than"], a: 0, emoji: "😴" },
+                { q: "He suggested that she ____ a doctor immediately before the condition ____.", o: ["see, worsens", "sees, worsened", "saw, worsen", "seeing, worsening"], a: 0, emoji: "🩺" },
+                { q: "Seldom ____ such a beautiful sunset in this part of the world.", o: ["one sees", "does one see", "one see", "do one sees"], a: 1, emoji: "🌅" },
+                { q: "The number of applicants ____ increasing, yet a number of them ____ unqualified.", o: ["is, are", "are, is", "is, is", "are, are"], a: 0, emoji: "📝" },
+                { q: "I would rather you ____ not ____ that loud music.", o: ["did, play", "do, play", "had, played", "would, playing"], a: 0, emoji: "🎵" },
+                { q: "Having ____ his work, he went out for a walk to ____ himself.", o: ["finish, refresh", "finished, refresh", "finishing, refreshing", "finished, refreshed"], a: 1, emoji: "🚶" },
+                { q: "Little ____ he know that his friends ____ planning a surprise.", o: ["did, were", "does, was", "did, was", "do, were"], a: 0, emoji: "🎁" },
+                { q: "Whatever ____ happen, I shall remain ____ to my principles.", o: ["may, true", "might, truth", "can, truly", "will, truthful"], a: 0, emoji: "📜" },
+                { q: "She is one of the few people who ____ how to operate this machine ____.", o: ["knows, correct", "know, correctly", "knows, correctly", "knowing, correct"], a: 1, emoji: "⚙️" },
+                { q: "By the time the fire brigade ____, the building ____ to the ground.", o: ["arrived, had burnt", "arrives, burnt", "arrived, burnt", "arriving, had burnt"], a: 0, emoji: "🚒" }
             ]
         };
 
@@ -355,12 +372,41 @@
             game: document.getElementById('screen-game'),
             result: document.getElementById('screen-result')
         };
+        const reactionOverlay = document.getElementById('reaction-overlay');
+        const reactionEmoji = document.getElementById('reaction-emoji');
         
         // --- CORE FUNCTIONS ---
         function universalClose() { location.reload(); }
         function switchScreen(name) {
             Object.values(screens).forEach(s => s.classList.remove('active'));
             screens[name].classList.add('active');
+        }
+
+        // --- FEEDBACK CHARACTER LOGIC ---
+        function showFeedback(isCorrect, callback) {
+            // Show Overlay
+            reactionOverlay.classList.remove('hidden');
+            reactionOverlay.classList.add('active');
+
+            if (isCorrect) {
+                // Happy Superhero with Bounce
+                reactionEmoji.innerHTML = "🦸‍♂️";
+                reactionEmoji.className = "anim-correct";
+            } else {
+                // No No Person with Shake
+                reactionEmoji.innerHTML = "🙅‍♂️";
+                reactionEmoji.className = "anim-wrong";
+            }
+
+            // Wait 2 seconds, then hide and execute callback
+            setTimeout(() => {
+                reactionOverlay.classList.remove('active');
+                
+                // Reset emoji class for next time
+                setTimeout(() => { reactionEmoji.className = ""; }, 300);
+                
+                if (callback) callback();
+            }, 2000);
         }
 
         // --- LEADERBOARD LOGIC ---
@@ -434,7 +480,13 @@
             state.isLocked = false;
             const q = state.currentQuestions[state.qIndex];
             document.getElementById('q-num').textContent = state.qIndex + 1;
-            document.getElementById('question-text').innerHTML = q.q.replace(/____/g, '<span class="blank">____</span>');
+            
+            // Insert Floating Emoji + Text
+            document.getElementById('question-text').innerHTML = `
+                <div class="question-emoji">${q.emoji || '❓'}</div>
+                <br>
+                ${q.q.replace(/____/g, '<span class="blank">____</span>')}
+            `;
             
             const box = document.getElementById('options-container');
             box.innerHTML = '';
@@ -464,22 +516,33 @@
 
             if (idx === correctIdx) {
                 state.isLocked = true;
-                btn.classList.add('correct-reveal');
-                fillBlanks(btn.textContent);
-                fireConfetti();
-                setTimeout(() => {
-                    if (state.qIndex < 14) {
-                        state.qIndex++;
-                        renderQuestion();
-                    } else {
-                        endGame();
-                    }
-                }, 3000);
+                
+                // Show Correct Animation first
+                showFeedback(true, () => {
+                    // Logic after animation finishes
+                    btn.classList.add('correct-reveal');
+                    fillBlanks(btn.textContent);
+                    fireConfetti();
+                    
+                    setTimeout(() => {
+                        if (state.qIndex < 14) {
+                            state.qIndex++;
+                            renderQuestion();
+                        } else {
+                            endGame();
+                        }
+                    }, 1500); // Short delay to see the filled blank
+                });
+
             } else {
+                state.mistakesMade[state.qIndex] = true;
                 btn.classList.add('wrong-reveal');
-                showToast("Try Again or click Next");
-                state.mistakesMade[state.qIndex] = true; 
-                setTimeout(() => btn.classList.remove('wrong-reveal'), 500);
+                
+                // Show Wrong Animation
+                showFeedback(false, () => {
+                   // Logic after animation finishes (user can try again)
+                   btn.classList.remove('wrong-reveal');
+                });
             }
         }
 
